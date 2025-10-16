@@ -271,12 +271,16 @@ function saveAnswer() {
 
 function nextQuestion() {
   saveAnswer();
+
   if (currentIndex < questions.length - 1) {
     currentIndex++;
     updateQuestion();
+  } else {
+    // إذا كنا في آخر سؤال، ننفذ endSection مباشرة
+    endSection();
   }
-  // لا تفتح شاشة المراجعة تلقائيًا في آخر سؤال
 }
+
 
 
 function prevQuestion() {
