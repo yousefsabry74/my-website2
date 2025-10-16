@@ -262,24 +262,32 @@ if (currentIndex === questions.length - 1) {
 
 function saveAnswer() {
     const selected = document.querySelector("input[name='answer']:checked");
-    // 1. تحديث الإجابة في مصفوفة الجلسة
+
+    // 🟢 حفظ الإجابة في المصفوفة المؤقتة
     questions[currentIndex].answer = selected ? parseInt(selected.value) : null;
-    
-    // 2. **الحفظ الإجباري (الإصلاح)**: حفظ المصفوفة المُحدثة في الذاكرة المحلية
+
+    // 🟢 تحديث التخزين المحلي فورًا
     localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions)); 
 }
 
+
 function nextQuestion() {
-    saveAnswer(); // تمكين الحفظ
-    
+    // 🟢 نحفظ أولاً الإجابة الحالية في الذاكرة والمحلية
+    saveAnswer();
+
     if (currentIndex < questions.length - 1) {
+        // 🟢 إذا لسه في أسئلة، ننتقل للسؤال التالي
         currentIndex++;
         updateQuestion();
     } else {
-        // إذا كان السؤال الأخير في القسم (المؤشر questions.length - 1)
-        reviewSection(); // ننتقل لشاشة المراجعة مباشرة
+        // 🟢 لو السؤال الأخير → نحفظ القسم بالكامل قبل المراجعة
+        localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions));
+
+        // 🟢 ننتقل لشاشة المراجعة
+        reviewSection();
     }
 }
+
 
 function prevQuestion() {
   saveAnswer();
