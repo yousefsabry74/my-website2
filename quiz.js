@@ -261,32 +261,52 @@ if (currentIndex === questions.length - 1) {
 }
 
 function saveAnswer() {
-    const selected = document.querySelector("input[name='answer']:checked");
+    // السؤال الحالي
+    const question = questions[currentIndex];
+    if (!question) return;
 
-    // 🟢 حفظ الإجابة في المصفوفة المؤقتة
-    questions[currentIndex].answer = selected ? parseInt(selected.value) : null;
+    // الخيار المختار
+    const selectedOption = document.querySelector('input[name="option"]:checked');
 
-    // 🟢 تحديث التخزين المحلي فورًا
-    localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions)); 
+    // حفظ الإجابة أو جعلها null
+    if (selectedOption) {
+        question.answer = parseInt(selectedOption.value);
+        question.marked = true;
+    } else {
+        question.answer = null;
+        question.marked = false;
+    }
+
+    // تحديث المصفوفة
+    questions[currentIndex] = question;
+
+    // حفظ فوري في localStorage
+    localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions));
+
+    console.log(`💾 تم حفظ السؤال ${currentIndex + 1} = ${question.answer}`);
 }
+
 
 
 function nextQuestion() {
-    // 🟢 نحفظ أولاً الإجابة الحالية في الذاكرة والمحلية
+    // احفظ الإجابة أولًا
     saveAnswer();
 
-    if (currentIndex < questions.length - 1) {
-        // 🟢 إذا لسه في أسئلة، ننتقل للسؤال التالي
-        currentIndex++;
-        updateQuestion();
-    } else {
-        // 🟢 لو السؤال الأخير → نحفظ القسم بالكامل قبل المراجعة
-        localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions));
+    // تأكيد الحفظ في localStorage
+    localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions));
 
-        // 🟢 ننتقل لشاشة المراجعة
-        reviewSection();
+    // الانتقال للسؤال التالي
+    if (currentIndex < questions.length - 1) {
+        currentIndex++;
+        displayQuestion();
+    } else {
+        // آخر سؤال - تأكيد الحفظ مرتين للأمان
+        saveAnswer();
+        localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions));
+        console.log("✅ تم حفظ آخر سؤال بنجاح.");
     }
 }
+
 
 
 function prevQuestion() {
@@ -341,27 +361,31 @@ function chooseQuestion() {
 }
 
 function endSection() {
- saveAnswer();
-localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions));
+    // ✅ حفظ آخر إجابة قبل أي تحقق
+    saveAnswer();
+    localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions));
 
+    // ✅ تحميل الأسئلة من الذاكرة (في حالة تم تحديثها سابقًا)
+    const savedQuestions = JSON.parse(localStorage.getItem(`section_questions_${currentSection}`)) || questions;
 
-    // تحقق من أن جميع الأسئلة مجابة
-    const unanswered = questions.filter(q => q.answer === null);
+    // ✅ التحقق من الأسئلة الغير مجابة
+    const unanswered = savedQuestions.filter(q => q.answer === null || q.answer === undefined);
     if (unanswered.length > 0) {
         alert(`⚠️ لا يمكنك تسليم القسم قبل الإجابة على جميع الأسئلة (${unanswered.length} سؤال غير مجاب).`);
         return;
     }
 
-    // حفظ القسم
-    localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions));
+    // ✅ حفظ حالة القسم كمُكمل
+    localStorage.setItem(`section_completed_${currentSection}`, "true");
 
-    if (currentSection < totalSections) {
-        localStorage.setItem("section", currentSection + 1);
-        window.location.href = "quiz.html";
-    } else {
-        finishExam();
-    }
+    // ✅ حفظ كل الإجابات بشكل نهائي
+    localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(savedQuestions));
+
+    // ✅ الانتقال إلى صفحة المراجعة أو القسم التالي
+    alert("✅ تم حفظ إجابات هذا القسم بنجاح! سيتم الانتقال إلى المراجعة الآن.");
+    window.location.href = "review.html"; // أو أي صفحة المراجعة اللي عندك
 }
+
 
 
 function finishExam() {
