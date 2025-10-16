@@ -261,53 +261,25 @@ if (currentIndex === questions.length - 1) {
 }
 
 function saveAnswer() {
-    // السؤال الحالي
-    const question = questions[currentIndex];
-    if (!question) return;
-
-    // الخيار المختار
-    const selectedOption = document.querySelector('input[name="option"]:checked');
-
-    // حفظ الإجابة أو جعلها null
-    if (selectedOption) {
-        question.answer = parseInt(selectedOption.value);
-        question.marked = true;
-    } else {
-        question.answer = null;
-        question.marked = false;
-    }
-
-    // تحديث المصفوفة
-    questions[currentIndex] = question;
-
-    // حفظ فوري في localStorage
-    localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions));
-
-    console.log(`💾 تم حفظ السؤال ${currentIndex + 1} = ${question.answer}`);
+    const selected = document.querySelector("input[name='answer']:checked");
+    // 1. تحديث الإجابة في مصفوفة الجلسة
+    questions[currentIndex].answer = selected ? parseInt(selected.value) : null;
+    
+    // 2. **الحفظ الإجباري (الإصلاح)**: حفظ المصفوفة المُحدثة في الذاكرة المحلية
+    localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions)); 
 }
-
-
 
 function nextQuestion() {
-    // احفظ الإجابة أولًا
-    saveAnswer();
-
-    // تأكيد الحفظ في localStorage
-    localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions));
-
-    // الانتقال للسؤال التالي
+    saveAnswer(); // تمكين الحفظ
+    
     if (currentIndex < questions.length - 1) {
         currentIndex++;
-        displayQuestion();
+        updateQuestion();
     } else {
-        // آخر سؤال - تأكيد الحفظ مرتين للأمان
-        saveAnswer();
-        localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions));
-        console.log("✅ تم حفظ آخر سؤال بنجاح.");
+        // إذا كان السؤال الأخير في القسم (المؤشر questions.length - 1)
+        reviewSection(); // ننتقل لشاشة المراجعة مباشرة
     }
 }
-
-
 
 function prevQuestion() {
   saveAnswer();
@@ -361,31 +333,25 @@ function chooseQuestion() {
 }
 
 function endSection() {
-    // ✅ حفظ آخر إجابة قبل أي تحقق
     saveAnswer();
-    localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions));
 
-    // ✅ تحميل الأسئلة من الذاكرة (في حالة تم تحديثها سابقًا)
-    const savedQuestions = JSON.parse(localStorage.getItem(`section_questions_${currentSection}`)) || questions;
-
-    // ✅ التحقق من الأسئلة الغير مجابة
-    const unanswered = savedQuestions.filter(q => q.answer === null || q.answer === undefined);
+    // تحقق من أن جميع الأسئلة مجابة
+    const unanswered = questions.filter(q => q.answer === null);
     if (unanswered.length > 0) {
         alert(`⚠️ لا يمكنك تسليم القسم قبل الإجابة على جميع الأسئلة (${unanswered.length} سؤال غير مجاب).`);
         return;
     }
 
-    // ✅ حفظ حالة القسم كمُكمل
-    localStorage.setItem(`section_completed_${currentSection}`, "true");
+    // حفظ القسم
+    localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions));
 
-    // ✅ حفظ كل الإجابات بشكل نهائي
-    localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(savedQuestions));
-
-    // ✅ الانتقال إلى صفحة المراجعة أو القسم التالي
-    alert("✅ تم حفظ إجابات هذا القسم بنجاح! سيتم الانتقال إلى المراجعة الآن.");
-    window.location.href = "review.html"; // أو أي صفحة المراجعة اللي عندك
+    if (currentSection < totalSections) {
+        localStorage.setItem("section", currentSection + 1);
+        window.location.href = "quiz.html";
+    } else {
+        finishExam();
+    }
 }
-
 
 
 function finishExam() {
