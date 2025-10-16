@@ -270,16 +270,14 @@ function saveAnswer() {
 }
 
 function nextQuestion() {
-    saveAnswer(); // تمكين الحفظ
-    
-    if (currentIndex < questions.length - 1) {
-        currentIndex++;
-        updateQuestion();
-    } else {
-        // إذا كان السؤال الأخير في القسم (المؤشر questions.length - 1)
-        reviewSection(); // ننتقل لشاشة المراجعة مباشرة
-    }
+  saveAnswer();
+  if (currentIndex < questions.length - 1) {
+    currentIndex++;
+    updateQuestion();
+  }
+  // لا تفتح شاشة المراجعة تلقائيًا في آخر سؤال
 }
+
 
 function prevQuestion() {
   saveAnswer();
@@ -310,8 +308,8 @@ function reviewSection() {
   const endButtonText = (currentSection < totalSections) ? '✅ تسليم القسم والانتقال' : '🏁 إنهاء الاختبار';
 
   html += `</ul>
-    <button onclick="window.location.href='quiz.html?section=${currentSection}&returnTo=0'">🔙 العودة لأول سؤال</button>
-    <button onclick="endSection()">${endButtonText}</button>`;
+  <button onclick="window.location.href='quiz.html?section=${currentSection}&returnTo=0'">🔙 العودة لأول سؤال</button>`;
+
     
   // استبدال محتوى الجسم بشاشة المراجعة
   document.body.innerHTML = html;
