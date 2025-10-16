@@ -341,7 +341,9 @@ function chooseQuestion() {
 }
 
 function endSection() {
-    saveAnswer();
+ saveAnswer();
+localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions));
+
 
     // تحقق من أن جميع الأسئلة مجابة
     const unanswered = questions.filter(q => q.answer === null);
