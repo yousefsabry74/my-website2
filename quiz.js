@@ -194,8 +194,9 @@ function updateQuestion() {
   const q = questions[currentIndex];
   const sectionTitleElement = document.getElementById("section-title");
   const paragraphBoxElement = document.getElementById("paragraph-box");
-  const questionTextElement = document.getElementById("question-text"); // جلب العنصر بشكل صحيح
+  const questionTextElement = document.getElementById("question-text");
   const submitBtn = document.getElementById("submit-section-btn");
+  const nextBtn = document.querySelector(".navigation button:nth-child(2)");
 
   // 1. تحديد عنوان القسم الرئيسي
   let currentSectionName = "";
@@ -207,58 +208,61 @@ function updateQuestion() {
 
   // 2. إعداد محتوى عنوان القسم الرئيسي
   sectionTitleElement.innerHTML = `<h2>${currentSectionName}</h2>`;
-  
+
   // 3. عرض عنوان الفقرة (Header)
   const prevHeader = currentIndex > 0 ? questions[currentIndex - 1].header : null;
   if (q.header && q.header !== prevHeader) {
-      sectionTitleElement.innerHTML += `<h3 style="color: #023e8a; margin-top: 10px;">${q.header}</h3>`;
+    sectionTitleElement.innerHTML += `<h3 style="color: #023e8a; margin-top: 10px;">${q.header}</h3>`;
   }
 
-  // 4. عرض الفقرة الطويلة (Paragraph) في العنصر المخصص لها
+  // 4. عرض الفقرة الطويلة (Paragraph)
   const prevParagraph = currentIndex > 0 ? questions[currentIndex - 1].paragraph : null;
   if (q.paragraph) {
-      if (q.paragraph !== prevParagraph) {
-          paragraphBoxElement.innerHTML = `<div style="background-color: #f0f9ff; padding: 15px; border-radius: 8px; text-align: justify;"><p>${q.paragraph}</p></div>`;
-          paragraphBoxElement.style.display = 'block';
-      } else {
-          paragraphBoxElement.style.display = 'block';
-      }
+    if (q.paragraph !== prevParagraph) {
+      paragraphBoxElement.innerHTML = `<div style="background-color: #f0f9ff; padding: 15px; border-radius: 8px; text-align: justify;"><p>${q.paragraph}</p></div>`;
+      paragraphBoxElement.style.display = 'block';
+    } else {
+      paragraphBoxElement.style.display = 'block';
+    }
   } else {
-      paragraphBoxElement.innerHTML = '';
-      paragraphBoxElement.style.display = 'none';
+    paragraphBoxElement.innerHTML = '';
+    paragraphBoxElement.style.display = 'none';
   }
 
   // 5. عرض رقم السؤال
   sectionTitleElement.innerHTML += `<p>السؤال ${currentIndex + 1} من ${questions.length}</p>`;
 
-  // 6. عرض نص السؤال والصورة (الإصلاح الحقيقي)
+  // 6. عرض نص السؤال والصورة
   let questionContent = '';
-  const imageSource = q.imageURL || q.image; // استخدم أي خاصية تحمل رابط الصورة
-  
+  const imageSource = q.imageURL || q.image;
   if (imageSource) {
-      // نضع الصورة أولاً مع التنسيق الأساسي الذي وضعناه في CSS
-      questionContent += `<img src="${imageSource}" alt="شكل توضيحي للسؤال" style="max-width: 100%; height: auto; display: block; margin: 15px auto; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">`;
+    questionContent += `<img src="${imageSource}" alt="شكل توضيحي للسؤال" style="max-width: 100%; height: auto; display: block; margin: 15px auto; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">`;
   }
-  questionContent += q.text; 
-  
-  // نستخدم innerHTML لضمان عرض وسم <img>
-  questionTextElement.innerHTML = questionContent; 
+  questionContent += q.text;
+  questionTextElement.innerHTML = questionContent;
 
+  // 7. عرض الاختيارات
   let answersHTML = "";
   q.options.forEach((opt, i) => {
     if (opt) {
-        answersHTML += `<label><input type="radio" name="answer" value="${i}" ${q.answer === i ? "checked" : ""}> ${opt}</label>`;
+      answersHTML += `<label><input type="radio" name="answer" value="${i}" ${q.answer === i ? "checked" : ""}> ${opt}</label>`;
     }
   });
   document.getElementById("answers").innerHTML = answersHTML;
 
-  // 7. تحديث نص زر التسليم/الإنهاء
-if (currentIndex === questions.length - 1) {
+  // 8. إظهار زر "تسليم القسم" فقط في آخر سؤال
+  if (currentIndex === questions.length - 1) {
     submitBtn.style.display = "inline-block";
-} else {
+  } else {
     submitBtn.style.display = "none";
+  }
+
+  // 9. إخفاء زر "التالي" في آخر سؤال
+  if (nextBtn) {
+    nextBtn.style.display = (currentIndex === questions.length - 1) ? "none" : "inline-block";
+  }
 }
-}
+
 
 function saveAnswer() {
     const selected = document.querySelector("input[name='answer']:checked");
@@ -271,16 +275,12 @@ function saveAnswer() {
 
 function nextQuestion() {
   saveAnswer();
-
   if (currentIndex < questions.length - 1) {
     currentIndex++;
     updateQuestion();
-  } else {
-    // إذا كنا في آخر سؤال، ننفذ endSection مباشرة
-    endSection();
   }
+  // لا تفتح شاشة المراجعة تلقائيًا في آخر سؤال
 }
-
 
 
 function prevQuestion() {
