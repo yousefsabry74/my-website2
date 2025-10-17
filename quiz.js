@@ -190,86 +190,79 @@ let questions = allQuestions.slice(sectionStarts[currentSection - 1], sectionSta
  * دالة updateQuestion (القلب النابض للعرض)
  * ============================================
  */
-/*
- * ============================================
- * دالة updateQuestion (القلب النابض للعرض)
- * ============================================
- */
 function updateQuestion() {
-    const q = questions[currentIndex];
-    const sectionTitleElement = document.getElementById("section-title");
-    const paragraphBoxElement = document.getElementById("paragraph-box");
-    const questionTextElement = document.getElementById("question-text");
-    const submitBtn = document.getElementById("submit-section-btn");
-    const nextBtn = document.querySelector(".navigation button:nth-child(2)");
+  const q = questions[currentIndex];
+  const sectionTitleElement = document.getElementById("section-title");
+  const paragraphBoxElement = document.getElementById("paragraph-box");
+  const questionTextElement = document.getElementById("question-text");
+  const submitBtn = document.getElementById("submit-section-btn");
+  const nextBtn = document.querySelector(".navigation button:nth-child(2)");
 
-    // 1. تحديد عنوان القسم الرئيسي (الكود كما هو)
-    let currentSectionName = "";
-    if (mode === 'real') {
-        currentSectionName = `القسم ${currentSection} من ${totalSections}`;
+  // 1. تحديد عنوان القسم الرئيسي
+  let currentSectionName = "";
+  if (mode === 'real') {
+    currentSectionName = `القسم ${currentSection} من ${totalSections}`;
+  } else {
+    currentSectionName = `الاختبار السريع (القسم 1)`;
+  }
+
+  // 2. إعداد محتوى عنوان القسم الرئيسي
+  sectionTitleElement.innerHTML = `<h2>${currentSectionName}</h2>`;
+
+  // 3. عرض عنوان الفقرة (Header)
+  const prevHeader = currentIndex > 0 ? questions[currentIndex - 1].header : null;
+  if (q.header && q.header !== prevHeader) {
+    sectionTitleElement.innerHTML += `<h3 style="color: #023e8a; margin-top: 10px;">${q.header}</h3>`;
+  }
+
+  // 4. عرض الفقرة الطويلة (Paragraph)
+  const prevParagraph = currentIndex > 0 ? questions[currentIndex - 1].paragraph : null;
+  if (q.paragraph) {
+    if (q.paragraph !== prevParagraph) {
+      paragraphBoxElement.innerHTML = `<div style="background-color: #f0f9ff; padding: 15px; border-radius: 8px; text-align: justify;"><p>${q.paragraph}</p></div>`;
+      paragraphBoxElement.style.display = 'block';
     } else {
-        currentSectionName = `الاختبار السريع (القسم 1)`;
+      paragraphBoxElement.style.display = 'block';
     }
-    sectionTitleElement.innerHTML = `<h2>${currentSectionName}</h2>`;
+  } else {
+    paragraphBoxElement.innerHTML = '';
+    paragraphBoxElement.style.display = 'none';
+  }
 
-    // 2. و 3. عرض عنوان الفقرة ونص الفقرة (الكود كما هو)
-    const prevHeader = currentIndex > 0 ? questions[currentIndex - 1].header : null;
-    if (q.header && q.header !== prevHeader) {
-        sectionTitleElement.innerHTML += `<h3 style="color: #023e8a; margin-top: 10px;">${q.header}</h3>`;
+  // 5. عرض رقم السؤال
+  sectionTitleElement.innerHTML += `<p>السؤال ${currentIndex + 1} من ${questions.length}</p>`;
+
+  // 6. عرض نص السؤال والصورة
+  let questionContent = '';
+  const imageSource = q.imageURL || q.image;
+  if (imageSource) {
+    questionContent += `<img src="${imageSource}" alt="شكل توضيحي للسؤال" style="max-width: 100%; height: auto; display: block; margin: 15px auto; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">`;
+  }
+  questionContent += q.text;
+  questionTextElement.innerHTML = questionContent;
+
+  // 7. عرض الاختيارات
+  let answersHTML = "";
+  q.options.forEach((opt, i) => {
+    if (opt) {
+      answersHTML += `<label><input type="radio" name="answer" value="${i}" ${q.answer === i ? "checked" : ""}> ${opt}</label>`;
     }
+  });
+  document.getElementById("answers").innerHTML = answersHTML;
 
-    const prevParagraph = currentIndex > 0 ? questions[currentIndex - 1].paragraph : null;
-    if (q.paragraph) {
-        if (q.paragraph !== prevParagraph) {
-            paragraphBoxElement.innerHTML = `<div style="background-color: #f0f9ff; padding: 15px; border-radius: 8px; text-align: justify;"><p>${q.paragraph}</p></div>`;
-            paragraphBoxElement.style.display = 'block';
-        } else {
-            paragraphBoxElement.style.display = 'block';
-        }
-    } else {
-        paragraphBoxElement.innerHTML = '';
-        paragraphBoxElement.style.display = 'none';
-    }
+  // 8. إظهار زر "تسليم القسم" فقط في آخر سؤال
+  if (currentIndex === questions.length - 1) {
+    submitBtn.style.display = "inline-block";
+  } else {
+    submitBtn.style.display = "none";
+  }
 
-    // 4. عرض رقم السؤال
-    sectionTitleElement.innerHTML += `<p>السؤال ${currentIndex + 1} من ${questions.length}</p>`;
-
-    // 5. عرض نص السؤال والصورة (الكود كما هو)
-    let questionContent = '';
-    const imageSource = q.imageURL || q.image;
-    if (imageSource) {
-        questionContent += `<img src="${imageSource}" alt="شكل توضيحي للسؤال" style="max-width: 100%; height: auto; display: block; margin: 15px auto; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">`;
-    }
-    questionContent += q.text;
-    questionTextElement.innerHTML = questionContent;
-
-    // 6. عرض الاختيارات
-    let answersHTML = "";
-    q.options.forEach((opt, i) => {
-        if (opt) {
-            // 🚨 التعديل الحاسم: إضافة onchange="saveAnswer()" لضمان الحفظ الفوري
-            answersHTML += `<label>
-                                <input type="radio" name="answer" value="${i}" 
-                                    ${q.answer === i ? "checked" : ""}
-                                    onchange="saveAnswer()"> 
-                                ${opt}
-                            </label>`;
-        }
-    });
-    document.getElementById("answers").innerHTML = answersHTML;
-
-    // 7. إظهار زر "تسليم القسم" في آخر سؤال
-    if (currentIndex === questions.length - 1) {
-        submitBtn.style.display = "inline-block";
-    } else {
-        submitBtn.style.display = "none";
-    }
-
-    // 8. إخفاء زر "التالي" في آخر سؤال
-    if (nextBtn) {
-        nextBtn.style.display = (currentIndex === questions.length - 1) ? "none" : "inline-block";
-    }
+  // 9. إخفاء زر "التالي" في آخر سؤال
+  if (nextBtn) {
+    nextBtn.style.display = (currentIndex === questions.length - 1) ? "none" : "inline-block";
+  }
 }
+
 
 function saveAnswer() {
     const selected = document.querySelector("input[name='answer']:checked");
@@ -304,49 +297,26 @@ function markQuestion() {
 }
 
 function reviewSection() {
-    // 1. 🚨 طبقة تأمين إضافية: حفظ إجابة السؤال الحالي قبل الانتقال لشاشة المراجعة
-    saveAnswer(); 
-    
-    // 2. حفظ حالة القسم قبل الانتقال للمراجعة
-    localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions));
+  saveAnswer();
+  // حفظ حالة القسم قبل الانتقال للمراجعة
+  localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions));
 
-    let html = `<h2>مراجعة القسم ${currentSection}</h2>
-                <p style="color: #d9534f; font-weight: bold;">⚠️ تأكد من الإجابة على جميع الأسئلة قبل تسليم القسم.</p>
-                <ul>`;
-    
-    questions.forEach((q, i) => {
-        let status = q.answer !== null ? "✅ مجاب" : "❌ غير مجاب";
-        if (q.marked) status += " ⭐ مرجعي";
-        
-        // 🔁 زر العودة إلى السؤال المحدد (goTo)
-        html += `<li>سؤال ${i + 1}: ${status} <button onclick="goTo(${i})" style="background-color: #5cb85c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">🔁 العودة</button></li>`;
-    });
-    
-    // 3. تحديد نص زر الإنهاء بناءً على القسم
-    const endButtonText = (currentSection < totalSections) ? '✅ تسليم القسم والانتقال للقسم التالي' : '🏁 إنهاء الاختبار بالكامل';
-    
-    html += `</ul>
-    
-    <div style="margin-top: 30px; display: flex; gap: 15px; flex-wrap: wrap;">
-        
-        <button onclick="endSection()" id="submit-section-review-btn" 
-                style="background-color: #04AA6D; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;">
-            ${endButtonText}
-        </button>
+  let html = `<h2>مراجعة القسم ${currentSection}</h2><ul>`;
+  questions.forEach((q, i) => {
+    let status = q.answer !== null ? "✅ مجاب" : "❌ غير مجاب";
+    if (q.marked) status += " ⭐ مرجعي";
+    html += `<li>سؤال ${i + 1}: ${status} <button onclick="window.location.href='quiz.html?section=${currentSection}&returnTo=${i}'">🔁</button></li>`;
+  });
+  
+  // تحديد نص زر الإنهاء بناءً على القسم
+  const endButtonText = (currentSection < totalSections) ? '✅ تسليم القسم والانتقال' : '🏁 إنهاء الاختبار';
 
-        <button onclick="goTo(0)" 
-                style="background-color: #ff9800; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
-            🔙 العودة لأول سؤال
-        </button>
-        
-        <button onclick="chooseQuestion()" 
-                style="background-color: #555; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
-            🔢 اختيار رقم سؤال
-        </button>
-    </div>`;
+  html += `</ul>
+  <button onclick="window.location.href='quiz.html?section=${currentSection}&returnTo=0'">🔙 العودة لأول سؤال</button>`;
 
-    // استبدال محتوى الجسم بشاشة المراجعة
-    document.body.innerHTML = html;
+    
+  // استبدال محتوى الجسم بشاشة المراجعة
+  document.body.innerHTML = html;
 }
 
 function goTo(index) {
