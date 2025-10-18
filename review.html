@@ -68,12 +68,11 @@
         <h2 id="review-title">مراجعة القسم</h2>
         
         <div id="unanswered-warning" class="warning-box" style="display: none;">
-            <strong>⚠️ تنبيه:</strong> لديك <span id="unanswered-count">0</span> سؤال غير مجاب. يجب الإجابة على جميع الأسئلة قبل إنهاء القسم.
+            <strong>⚠️ تنبيه:</strong> لديك <span id="unanswered-count">0</span> سؤال غير مجاب.
         </div>
         
         <div id="questions-list" style="margin: 20px 0;">
-            <!-- هنا راح تظهر قائمة الأسئلة -->
-        </div>
+            </div>
         
         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 20px;">
             <button onclick="goToFirstQuestion()" class="btn btn-primary">
@@ -85,10 +84,7 @@
             <button onclick="continueQuiz()" class="btn btn-secondary">
                 ➕ متابعة الاختبار
             </button>
-            <button onclick="submitSection()" id="submit-btn" class="btn btn-success">
-                ✅ تسليم القسم
-            </button>
-        </div>
+            </div>
     </div>
 
     <script>
@@ -141,19 +137,12 @@
 
             const unanswered = questions.filter(q => q.answer === null);
             const warningDiv = document.getElementById('unanswered-warning');
-            const submitBtn = document.getElementById('submit-btn');
             
             if (unanswered.length > 0) {
                 warningDiv.style.display = 'block';
                 document.getElementById('unanswered-count').textContent = unanswered.length;
-                submitBtn.disabled = true;
-                submitBtn.classList.add('btn-secondary');
-                submitBtn.classList.remove('btn-success');
             } else {
                 warningDiv.style.display = 'none';
-                submitBtn.disabled = false;
-                submitBtn.classList.add('btn-success');
-                submitBtn.classList.remove('btn-secondary');
             }
         }
 
@@ -174,42 +163,9 @@
             const lastIndex = localStorage.getItem(`last_question_index_${currentSection}`) || 0;
             window.location.href = `quiz.html?returnTo=${lastIndex}`;
         }
+        
+        // تم حذف الدوال (endSection) و (submitSection) من هذا الملف لأنهما لم تعدا مستخدمتين هنا.
 
-        // في quiz.js
-function endSection() {
-    saveAnswer();
-    const unanswered = questions.filter(q => q.answer === null);
-    if (unanswered.length > 0) {
-        alert(`⚠️ لا يمكنك تسليم القسم قبل الإجابة على جميع الأسئلة (${unanswered.length} سؤال غير مجاب).`);
-        return;
-    }
-    localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions));
-    if (currentSection < totalSections) {
-        localStorage.setItem("section", currentSection + 1);
-        window.location.href = "quiz.html";
-    } else {
-        finishExam(); // ✅ تأكد من استدعاء finishExam() هنا أيضًا
-    }
-}
-// في review.html
-function submitSection() {
-    const unanswered = questions.filter(q => q.answer === null);
-    
-    if (unanswered.length > 0) {
-        alert('❌ لا يمكن تسليم القسم. يجب الإجابة على جميع الأسئلة أولاً.');
-        return;
-    }
-
-    if (currentSection < totalSections) {
-        // ينتقل للقسم التالي
-        localStorage.setItem("section", currentSection + 1);
-        window.location.href = "quiz.html";
-    } else {
-        // 🎯 التعديل الحاسم: نعود لصفحة quiz.html مع باراميتر خاص 
-        // لكي تقوم quiz.js باستدعاء finishExam() وحساب النتائج قبل الانتقال
-        window.location.href = "quiz.html?action=finish"; 
-    }
-}
     </script>
 </body>
 </html>
