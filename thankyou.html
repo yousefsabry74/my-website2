@@ -31,6 +31,35 @@
         color: #e67e22;
         font-style: italic;
     }
+    .results-card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 25px;
+      margin: 20px 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border-left: 5px solid #0077b6;
+    }
+    .score-circle {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0077b6, #00b4d8);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      margin: 0 auto 20px;
+      font-weight: bold;
+    }
+    .score-main {
+      font-size: 32px;
+      line-height: 1;
+    }
+    .score-label {
+      font-size: 14px;
+      margin-top: 5px;
+    }
   </style>
 </head>
 <body>
@@ -38,19 +67,44 @@
     <h2>🎉 شكرًا لك!</h2>
     <p>لقد أنهيت الاختبار بنجاح.</p>
     
-    <div id="results-summary">
-        <h3>ملخص النتيجة النهائية</h3>
-        <p><strong>عدد الأسئلة الكلي:</strong> <span id="total-q"></span> سؤال</p>
-        <p><strong>الأسئلة الصحيحة:</strong> <span id="correct-q"></span> سؤال</p>
-        <p><strong>الدرجة النهائية:</strong> <span id="final-score"></span> (معدل $0.83$ لكل سؤال)</p>
+    <div class="results-card">
+      <h3>ملخص النتيجة النهائية</h3>
+      
+      <div class="score-circle">
+        <div class="score-main" id="score-display">0</div>
+        <div class="score-label">درجة</div>
+      </div>
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; text-align: center;">
+        <div>
+          <strong>عدد الأسئلة الكلي</strong>
+          <div style="font-size: 24px; color: #0077b6;" id="total-q">0</div>
+        </div>
+        <div>
+          <strong>الإجابات الصحيحة</strong>
+          <div style="font-size: 24px; color: #27ae60;" id="correct-q">0</div>
+        </div>
+        <div>
+          <strong>نسبة النجاح</strong>
+          <div style="font-size: 24px; color: #e67e22;" id="success-rate">0%</div>
+        </div>
+      </div>
+      
+      <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+        <p><strong>الدرجة النهائية:</strong> <span id="final-score">0</span> نقطة (معدل 0.83 نقطة لكل سؤال)</p>
+      </div>
     </div>
     
-    <div id="error-report">
+    <div id="error-report" style="display: none;">
         <h3>تقرير الأخطاء والمراجعة (<span id="error-count">0</span> خطأ)</h3>
         <div id="error-list"></div>
     </div>
 
-    <button onclick="goHome()">🔙 العودة للصفحة الرئيسية</button>
+    <div style="text-align: center; margin-top: 30px;">
+      <button onclick="goHome()" style="background: #0077b6; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px;">
+        🔙 العودة للصفحة الرئيسية
+      </button>
+    </div>
   </div>
 
   <script>
@@ -60,6 +114,10 @@
       localStorage.removeItem("section");
       localStorage.removeItem("totalSections");
       localStorage.removeItem("quizResults");
+      for (let i = 1; i <= 5; i++) {
+        localStorage.removeItem(`section_questions_${i}`);
+        localStorage.removeItem(`last_question_index_${i}`);
+      }
       window.location.href = "index.html";
     }
 
@@ -67,15 +125,25 @@
     document.addEventListener("DOMContentLoaded", () => {
         const results = JSON.parse(localStorage.getItem("quizResults"));
         const errorListElement = document.getElementById("error-list");
+        const errorReportElement = document.getElementById("error-report");
         
         if (results) {
+            // عرض النتائج الرئيسية
             document.getElementById("total-q").textContent = results.total;
             document.getElementById("correct-q").textContent = results.correct;
             document.getElementById("final-score").textContent = results.score;
+            document.getElementById("score-display").textContent = results.score;
+            
+            // حساب نسبة النجاح
+            const successRate = ((results.correct / results.total) * 100).toFixed(1);
+            document.getElementById("success-rate").textContent = successRate + '%';
+            
+            // عرض الأخطاء
             document.getElementById("error-count").textContent = results.errors.length;
 
             if (results.errors.length === 0) {
-                errorListElement.innerHTML = "<p>✅ أحسنت! لم يتم تسجيل أي أخطاء.</p>";
+                errorListElement.innerHTML = "<p style='text-align: center; color: #27ae60; font-size: 18px;'>🎉 أحسنت! لم يتم تسجيل أي أخطاء. أداء رائع!</p>";
+                errorReportElement.style.display = 'block';
             } else {
                 results.errors.forEach(error => {
                     const errorItem = document.createElement('div');
@@ -91,12 +159,15 @@
                     `;
                     errorListElement.appendChild(errorItem);
                 });
+                errorReportElement.style.display = 'block';
             }
         } else {
-             document.getElementById("results-summary").innerHTML = "<p>لا تتوفر تفاصيل للنتائج. يرجى إعادة الاختبار.</p>";
-             document.getElementById("error-report").style.display = 'none';
+            document.querySelector(".results-card").innerHTML = 
+                "<p style='color: #e74c3c; text-align: center;'>❌ لا تتوفر تفاصيل للنتائج. يرجى إعادة الاختبار.</p>";
+            errorReportElement.style.display = 'none';
         }
     });
+    
   </script>
 </body>
 </html>
