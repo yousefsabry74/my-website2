@@ -2,7 +2,7 @@ let mode = localStorage.getItem("mode");
 let currentSection = parseInt(localStorage.getItem("section") || "1");
 let totalSections = parseInt(localStorage.getItem("totalSections") || "1");
 let currentIndex = 0;
-let timeLeft = 25 * 60; // 25 دقيقة لكل قسم
+let timeLeft = 25 * 60; // 25 دقيقة لكل قس
 
 // **التوزيع الجديد:** 5 أقسام * 24 سؤال = 120 سؤال
 const QUESTIONS_PER_SECTION = 24;
