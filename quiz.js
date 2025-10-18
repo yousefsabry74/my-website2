@@ -6,7 +6,7 @@ let timeLeft = 25 * 60; // 25 دقيقة لكل قسم
 
 // **التوزيع الجديد:** 5 أقسام * 24 سؤال = 120 سؤال
 const QUESTIONS_PER_SECTION = 24;
-const sectionStarts = [0, 24, 48, 72, 96]; // بدايات الأقسام
+const sectionStarts = [0, 24, 48, 72, 96]; // بدايات الأقسا
 
 // توزيع الأسئلة حسب النوع (5 أقسام)
 const TOTAL_VERBAL = 65; // 13 سؤال لفظي * 5 أقسام
