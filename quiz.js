@@ -182,14 +182,38 @@ let allQuestions = [
 
 ];
 
-// تحديد الأسئلة الخاصة بالقسم الحالي فقط
 let questions = allQuestions.slice(sectionStarts[currentSection - 1], sectionStarts[currentSection - 1] + QUESTIONS_PER_SECTION);
+// تنظيف أي بيانات قديمة عند بداية الاختبار
+function clearPreviousState() {
+  localStorage.removeItem("mode");
+  localStorage.removeItem("section"); 
+  localStorage.removeItem("totalSections");
+  localStorage.removeItem("quizResults");
+  
+  // تنظيف كل الأقسام
+  for (let i = 1; i <= 5; i++) {
+    localStorage.removeItem(`section_questions_${i}`);
+    localStorage.removeItem(`last_question_index_${i}`);
+  }
+}
 
-/*
- * ============================================
- * دالة updateQuestion (القلب النابض للعرض)
- * ============================================
- */
+// في startQuickMock و startRealMock
+function startQuickMock() {
+  clearPreviousState(); // نظف الأول
+  localStorage.setItem("mode", "quick");
+  localStorage.setItem("section", "1");
+  localStorage.setItem("totalSections", "1");
+  window.location.href = "quiz.html";
+}
+
+function startRealMock() {
+  clearPreviousState(); // نظف الأول
+  localStorage.setItem("mode", "real"); 
+  localStorage.setItem("section", "1");
+  localStorage.setItem("totalSections", "5");
+  window.location.href = "quiz.html";
+}
+
 function updateQuestion() {
   const q = questions[currentIndex];
   const sectionTitleElement = document.getElementById("section-title");
@@ -198,7 +222,6 @@ function updateQuestion() {
   const submitBtn = document.getElementById("submit-section-btn");
   const nextBtn = document.querySelector(".navigation button:nth-child(2)");
 
-  // 1. تحديد عنوان القسم الرئيسي
   let currentSectionName = "";
   if (mode === 'real') {
     currentSectionName = `القسم ${currentSection} من ${totalSections}`;
@@ -206,16 +229,13 @@ function updateQuestion() {
     currentSectionName = `الاختبار السريع (القسم 1)`;
   }
 
-  // 2. إعداد محتوى عنوان القسم الرئيسي
   sectionTitleElement.innerHTML = `<h2>${currentSectionName}</h2>`;
 
-  // 3. عرض عنوان الفقرة (Header)
   const prevHeader = currentIndex > 0 ? questions[currentIndex - 1].header : null;
   if (q.header && q.header !== prevHeader) {
     sectionTitleElement.innerHTML += `<h3 style="color: #023e8a; margin-top: 10px;">${q.header}</h3>`;
   }
 
-  // 4. عرض الفقرة الطويلة (Paragraph)
   const prevParagraph = currentIndex > 0 ? questions[currentIndex - 1].paragraph : null;
   if (q.paragraph) {
     if (q.paragraph !== prevParagraph) {
@@ -229,10 +249,8 @@ function updateQuestion() {
     paragraphBoxElement.style.display = 'none';
   }
 
-  // 5. عرض رقم السؤال
   sectionTitleElement.innerHTML += `<p>السؤال ${currentIndex + 1} من ${questions.length}</p>`;
 
-  // 6. عرض نص السؤال والصورة
   let questionContent = '';
   const imageSource = q.imageURL || q.image;
   if (imageSource) {
@@ -241,7 +259,6 @@ function updateQuestion() {
   questionContent += q.text;
   questionTextElement.innerHTML = questionContent;
 
-  // 7. عرض الاختيارات
   let answersHTML = "";
   q.options.forEach((opt, i) => {
     if (opt) {
@@ -250,27 +267,21 @@ function updateQuestion() {
   });
   document.getElementById("answers").innerHTML = answersHTML;
 
-  // 8. إظهار زر "تسليم القسم" فقط في آخر سؤال
   if (currentIndex === questions.length - 1) {
     submitBtn.style.display = "inline-block";
   } else {
     submitBtn.style.display = "none";
   }
 
-  // 9. إخفاء زر "التالي" في آخر سؤال
   if (nextBtn) {
     nextBtn.style.display = (currentIndex === questions.length - 1) ? "none" : "inline-block";
   }
 }
 
-
 function saveAnswer() {
     const selected = document.querySelector("input[name='answer']:checked");
-    // 1. تحديث الإجابة في مصفوفة الجلسة
     questions[currentIndex].answer = selected ? parseInt(selected.value) : null;
-    
-    // 2. **الحفظ الإجباري (الإصلاح)**: حفظ المصفوفة المُحدثة في الذاكرة المحلية
-    localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions)); 
+    localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions));
 }
 
 function nextQuestion() {
@@ -278,10 +289,10 @@ function nextQuestion() {
   if (currentIndex < questions.length - 1) {
     currentIndex++;
     updateQuestion();
+  } else {
+    reviewSection();
   }
-  // لا تفتح شاشة المراجعة تلقائيًا في آخر سؤال
 }
-
 
 function prevQuestion() {
   saveAnswer();
@@ -292,61 +303,25 @@ function prevQuestion() {
 }
 
 function markQuestion() {
-  questions[currentIndex].marked = !questions[currentIndex].marked; 
+  questions[currentIndex].marked = !questions[currentIndex].marked;
   alert(questions[currentIndex].marked ? "⭐ تم وضع علامة مرجعية" : "❌ تم إزالة العلامة المرجعية");
 }
 
 function reviewSection() {
   saveAnswer();
-  // حفظ حالة القسم قبل الانتقال للمراجعة
+  localStorage.setItem(`last_question_index_${currentSection}`, currentIndex);
   localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions));
-
-  let html = `<h2>مراجعة القسم ${currentSection}</h2><ul>`;
-  questions.forEach((q, i) => {
-    let status = q.answer !== null ? "✅ مجاب" : "❌ غير مجاب";
-    if (q.marked) status += " ⭐ مرجعي";
-    html += `<li>سؤال ${i + 1}: ${status} <button onclick="window.location.href='quiz.html?section=${currentSection}&returnTo=${i}'">🔁</button></li>`;
-  });
-  
-  // تحديد نص زر الإنهاء بناءً على القسم
-  const endButtonText = (currentSection < totalSections) ? '✅ تسليم القسم والانتقال' : '🏁 إنهاء الاختبار';
-
-  html += `</ul>
-  <button onclick="window.location.href='quiz.html?section=${currentSection}&returnTo=0'">🔙 العودة لأول سؤال</button>`;
-
-    
-  // استبدال محتوى الجسم بشاشة المراجعة
-  document.body.innerHTML = html;
-}
-
-function goTo(index) {
-  saveAnswer();
-  // حفظ حالة القسم قبل الانتقال
-  localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions));
-  // إعادة توجيه مع تحديد السؤال المراد الرجوع إليه
-  window.location.href = `quiz.html?section=${currentSection}&returnTo=${index}`;
-}
-
-function chooseQuestion() {
-  let num = prompt("أدخل رقم السؤال:");
-  if (num && !isNaN(num) && num >= 1 && num <= questions.length) {
-    goTo(parseInt(num) - 1);
-  }
+  window.location.href = "review.html";
 }
 
 function endSection() {
     saveAnswer();
-
-    // تحقق من أن جميع الأسئلة مجابة
     const unanswered = questions.filter(q => q.answer === null);
     if (unanswered.length > 0) {
         alert(`⚠️ لا يمكنك تسليم القسم قبل الإجابة على جميع الأسئلة (${unanswered.length} سؤال غير مجاب).`);
         return;
     }
-
-    // حفظ القسم
     localStorage.setItem(`section_questions_${currentSection}`, JSON.stringify(questions));
-
     if (currentSection < totalSections) {
         localStorage.setItem("section", currentSection + 1);
         window.location.href = "quiz.html";
@@ -355,7 +330,6 @@ function endSection() {
     }
 }
 
-
 function finishExam() {
   saveAnswer();
   let errors = [];
@@ -363,88 +337,97 @@ function finishExam() {
   let totalQuestionsCount = 0;
   const optionLabels = ["أ", "ب", "ج", "د"];
 
+  console.log("بدء حساب النتائج...");
+
   for (let i = 1; i <= totalSections; i++) {
       const savedSection = localStorage.getItem(`section_questions_${i}`);
+      console.log(`القسم ${i}:`, savedSection ? "موجود" : "غير موجود");
+      
       if (savedSection) {
           const sectionQuestions = JSON.parse(savedSection);
           totalQuestionsCount += sectionQuestions.length;
+          console.log(`أسئلة القسم ${i}:`, sectionQuestions.length);
           
           sectionQuestions.forEach((q, indexInSection) => {
-              // 1. حساب الإجابات الصحيحة
               if (q.answer !== null && q.answer === q.correct) {
                   totalCorrectAnswers++;
-              } else if (q.answer !== q.correct) {
-                  // 2. تسجيل الأخطاء (إذا لم يتم الإجابة أو كانت الإجابة خاطئة)
-                  const questionNumber = indexInSection + 1;
+              }
+              
+              if (q.answer === null || q.answer !== q.correct) {
                   errors.push({
                       section: i,
-                      question: questionNumber,
+                      question: indexInSection + 1,
                       text: q.text,
                       userAnswer: q.answer !== null ? q.options[q.answer] : "لم تتم الإجابة",
                       correctAnswer: q.options[q.correct],
-                      correctLabel: q.options[q.correct] ? optionLabels[q.correct] : 'غير محدد' 
+                      correctLabel: optionLabels[q.correct]
                   });
               }
           });
       }
   }
 
- const finalScore = (totalCorrectAnswers * 0.83).toFixed(2);
+  console.log("الإجابات الصحيحة:", totalCorrectAnswers);
+  console.log("إجمالي الأسئلة:", totalQuestionsCount);
+  console.log("عدد الأخطاء:", errors.length);
+
+  const finalScore = (totalCorrectAnswers * 0.83).toFixed(2);
   
-  // تخزين تقرير الأخطاء المفصل
-  localStorage.setItem("quizResults", JSON.stringify({
+  // حفظ النتائج بشكل صحيح
+  const quizResults = {
     score: finalScore,
     correct: totalCorrectAnswers,
-    total: totalQuestionsCount, // **تم تثبيت القيمة هنا لتجنب أي خطأ في الحساب**
+    total: totalQuestionsCount,
     errors: errors,
     totalSections: totalSections
-  }));
-  
-  // تنظيف التخزين الخاص بالأقسام
-  for (let i = 1; i <= totalSections; i++) {
-      localStorage.removeItem(`section_questions_${i}`);
-  }
+  };
 
-  window.location.href = "thankyou.html";
+  console.log("النتائج النهائية:", quizResults);
+  
+  localStorage.setItem("quizResults", JSON.stringify(quizResults));
+
+  // الانتقال لصفحة النتائج بعد فترة بسيطة
+  setTimeout(() => {
+    window.location.href = "thankyou.html";
+  }, 500);
 }
 
-// ** منطق التحميل والتخزين للقسم الحالي (عند تحميل الصفحة) **
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. تحديد بداية الأسئلة للقسم الحالي من المصفوفة الكلية
     const start = sectionStarts[currentSection - 1];
     const end = start + QUESTIONS_PER_SECTION;
     questions = allQuestions.slice(start, end);
     
-    // 2. محاولة استعادة الأسئلة من التخزين المحلي (للحالة المحفوظة)
     const savedSectionQuestions = localStorage.getItem(`section_questions_${currentSection}`);
     if (savedSectionQuestions) {
         questions = JSON.parse(savedSectionQuestions);
-    } 
+    }
     
-    // 3. التحقق من وجود رقم سؤال محدد للعودة إليه من URL
     const urlParams = new URLSearchParams(window.location.search);
     const returnToIndex = urlParams.get('returnTo');
     if (returnToIndex !== null) {
         currentIndex = parseInt(returnToIndex);
+        localStorage.setItem(`last_question_index_${currentSection}`, currentIndex);
     } else {
-        currentIndex = 0;
+        const savedIndex = localStorage.getItem(`last_question_index_${currentSection}`);
+        currentIndex = savedIndex ? parseInt(savedIndex) : 0;
+    }
+
+    // 🆕 الكود المضاف لمعالجة الإنهاء عند العودة من صفحة المراجعة
+    if (urlParams.get('action') === 'finish') {
+        finishExam();
+        return; 
     }
     
     updateQuestion();
 
-    // 4. إزالة زر إنهاء الامتحان القديم (end-exam) إذا وجد، لضمان استخدام زر واحد
     const oldEndExamBtn = document.getElementById("end-exam");
     if (oldEndExamBtn) {
         oldEndExamBtn.remove();
     }
 
-    // 5. يتم مسح معاملات URL لضمان بداية نظيفة في المرة القادمة
     window.history.replaceState({}, document.title, "quiz.html");
-
 });
 
-
-// عداد الوقت
 setInterval(() => {
   if (timeLeft > 0) {
     timeLeft--;
@@ -452,7 +435,6 @@ setInterval(() => {
     const sec = timeLeft % 60;
     document.getElementById("timer").textContent = `الوقت المتبقي: ${min}:${sec < 10 ? "0" + sec : sec}`;
   } else {
-    // عند انتهاء الوقت، ننتقل مباشرة لشاشة المراجعة
     reviewSection();
   }
 }, 1000);
